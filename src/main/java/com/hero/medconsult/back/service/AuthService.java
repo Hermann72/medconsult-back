@@ -3,6 +3,7 @@ package com.hero.medconsult.back.service;
 import com.hero.medconsult.back.auth.AuthResponse;
 import com.hero.medconsult.back.auth.LoginRequest;
 import com.hero.medconsult.back.auth.RegisterRequest;
+import com.hero.medconsult.back.exception.UserAlreadyExistsException;
 import com.hero.medconsult.back.jwt.JwtService;
 import com.hero.medconsult.back.model.Role;
 import com.hero.medconsult.back.model.User;
@@ -51,6 +52,11 @@ public class AuthService {
      * @return an AuthResponse containing the authentication token for the registered user.
      */
     public AuthResponse register(RegisterRequest request) {
+        // Check if the user already exists
+        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new UserAlreadyExistsException("User with email " + request.getUsername() + " already exists");
+        }
+
         User user = User.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
