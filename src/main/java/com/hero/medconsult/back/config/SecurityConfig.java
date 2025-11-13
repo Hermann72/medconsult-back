@@ -1,9 +1,5 @@
 package com.hero.medconsult.back.config;
 
-/*
-    https://youtu.be/nwqQYCM4YT8
- */
-
 import com.hero.medconsult.back.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -17,6 +13,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
+/**
+ *  Security configuration for the application.
+ */
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
