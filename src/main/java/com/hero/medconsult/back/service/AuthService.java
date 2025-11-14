@@ -5,13 +5,13 @@ import com.hero.medconsult.back.auth.LoginRequest;
 import com.hero.medconsult.back.auth.RegisterRequest;
 import com.hero.medconsult.back.exception.UserAlreadyExistsException;
 import com.hero.medconsult.back.jwt.JwtService;
+import com.hero.medconsult.back.mapper.UserMapper;
 import com.hero.medconsult.back.model.Role;
 import com.hero.medconsult.back.model.User;
 import com.hero.medconsult.back.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -27,29 +27,32 @@ public class AuthService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final UserMapper userMapper;
 
     /**
      * Authenticates a user with the provided login request details and generates an authentication token.
      *
      * @param request the login request containing the user's username and password.
-     * @return an AuthResponse containing the authentication token for the authenticated user.
+     * @return an AuthResponse containing the authentication token and user information.
      */
 
     public AuthResponse login(LoginRequest request) {
         authenticationManager
                 .authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
-        UserDetails userDetails = userRepository.findByUsername(request.getUsername()).orElseThrow();
-        String token = jwtService.generateToken(userDetails);
+        User user = userRepository.findByUsername(request.getUsername()).orElseThrow();
+        String token = jwtService.generateToken(user);
+
         return AuthResponse.builder()
                 .token(token)
+                .user(userMapper.toResponseDTO(user))
                 .build();
     }
 
     /**
      * Registers a new user with the provided registration request details.
      *
-     * @param request the registration request containing the user's details such as username, password, first name, last name, and country.
-     * @return an AuthResponse containing the authentication token for the registered user.
+     * @param request the registration request containing the user's details.
+     * @return an AuthResponse containing the authentication token and user information.
      */
     public AuthResponse register(RegisterRequest request) {
         // Check if the user already exists
@@ -65,10 +68,12 @@ public class AuthService {
                 .country(request.getCountry())
                 .role(Role.USER)
                 .build();
-        userRepository.save(user);
+
+        User savedUser = userRepository.save(user);
 
         return AuthResponse.builder()
-                .token(jwtService.generateToken(user))
+                .token(jwtService.generateToken(savedUser))
+                .user(userMapper.toResponseDTO(savedUser))
                 .build();
     }
 }
