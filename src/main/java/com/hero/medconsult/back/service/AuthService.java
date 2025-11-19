@@ -10,6 +10,7 @@ import com.hero.medconsult.back.model.Role;
 import com.hero.medconsult.back.model.User;
 import com.hero.medconsult.back.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
  * Service class for user authentication and registration.
  * Provides methods to login and register users.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -37,15 +39,25 @@ public class AuthService {
      */
 
     public AuthResponse login(LoginRequest request) {
-        authenticationManager
-                .authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
-        User user = userRepository.findByUsername(request.getUsername()).orElseThrow();
-        String token = jwtService.generateToken(user);
+        log.debug("Login attempt for user: {}", request.getUsername());
 
-        return AuthResponse.builder()
-                .token(token)
-                .user(userMapper.toResponseDTO(user))
-                .build();
+        try {
+            authenticationManager
+                    .authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+
+            User user = userRepository.findByUsername(request.getUsername()).orElseThrow();
+            String token = jwtService.generateToken(user);
+
+            log.info("User logged in successfully: {}", request.getUsername());
+
+            return AuthResponse.builder()
+                    .token(token)
+                    .user(userMapper.toResponseDTO(user))
+                    .build();
+        } catch (Exception e) {
+            log.error("Login failed for user: {}", request.getUsername());
+            throw e;
+        }
     }
 
     /**
@@ -55,8 +67,11 @@ public class AuthService {
      * @return an AuthResponse containing the authentication token and user information.
      */
     public AuthResponse register(RegisterRequest request) {
+        log.debug("Registration attempt for user: {}", request.getUsername());
+
         // Check if the user already exists
         if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+            log.warn("Registration failed: User already exists - {}", request.getUsername());
             throw new UserAlreadyExistsException("User with email " + request.getUsername() + " already exists");
         }
 
@@ -70,6 +85,8 @@ public class AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
+
+        log.info("User registered successfully: {} (ID: {})", savedUser.getUsername(), savedUser.getId());
 
         return AuthResponse.builder()
                 .token(jwtService.generateToken(savedUser))

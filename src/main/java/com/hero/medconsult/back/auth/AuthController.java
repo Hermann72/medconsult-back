@@ -3,6 +3,7 @@ package com.hero.medconsult.back.auth;
 import com.hero.medconsult.back.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Provides endpoints for user login and registration.
  *
  */
+@Slf4j
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -29,7 +31,9 @@ public class AuthController {
      */
     @PostMapping(value = "login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+        log.debug("Login endpoint called for user: {}", request.getUsername());
+        AuthResponse response = authService.login(request);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -40,7 +44,8 @@ public class AuthController {
      */
     @PostMapping(value = "register")
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(authService.register(request));
+        log.debug("Register endpoint called for user: {}", request.getUsername());
+        AuthResponse response = authService.register(request);
+        return ResponseEntity.ok(response);
     }
-
 }
